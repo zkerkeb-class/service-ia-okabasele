@@ -58,10 +58,14 @@ ${referenceScore.map((n) => `- Note: ${n.note}, Time: ${n.time}ms, Velocity: ${n
 ${studentData.performance.map((n) => `- Note: ${n.note}, Time: ${n.time}ms, Velocity: ${n.velocity}`).join("\n")}
 
 ## 📝 Detected Issues:
-${analysisResults.map((result) => {
-  let errorMessages = result.errors.map((error) => `  - ${error.message}`).join("\n");
-  return `- Note: ${result.note}, Status: ${result.success ? "✅ Correct" : "❌ Incorrect"}\n${errorMessages}`;
-}).join("\n")}
+${analysisResults
+  .map((result) => {
+    let errorMessages = result.errors
+      .map((error) => `  - ${error.message}`)
+      .join("\n")
+    return `- Note: ${result.note}, Status: ${result.success ? "✅ Correct" : "❌ Incorrect"}\n${errorMessages}`
+  })
+  .join("\n")}
 
 ## 🔍 Feedback Rules:
 - If the student has **1-4 mistakes**, return only **color-based feedback** ('green' for correct, 'red' for incorrect).
@@ -93,9 +97,8 @@ ${analysisResults.map((result) => {
 \`\`\`
 
 ## 🔄 Your response **must be strictly in JSON format** without additional text.
-  `;
-};
-
+  `
+}
 
 module.exports = {
   comparePerformance,
