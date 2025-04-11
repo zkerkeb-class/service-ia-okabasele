@@ -38,11 +38,17 @@ exports.addMessageToThread = async (req, res) => {
     // Définir les outils
     const tools = Array.from(toolsMap.values())
 
-    // Démarrer un run
-    let run = await openai.beta.threads.runs.create(threadId, {
-      assistant_id: process.env.OPENAI_ASSISTANT_ID,
-      tools
-    })
+    let run = await openai.beta.threads.runs.list(threadId)
+    run = run.data.find((r) => ["in_progress", "queued"].includes(r.status))
+
+    if (!run) {
+      // Démarrer un run
+      run = await openai.beta.threads.runs.create(threadId, {
+        assistant_id: process.env.OPENAI_ASSISTANT_ID,
+        tools,
+        max_prompt_tokens: 1000
+      })
+    }
 
     // Suivre le statut du run
     while (["queued", "in_progress", "requires_action"].includes(run.status)) {
