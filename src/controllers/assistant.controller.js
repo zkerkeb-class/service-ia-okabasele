@@ -1,6 +1,5 @@
 const { OpenAI } = require("openai")
 const toolService = require("../services/tool.service")
-const { toolsMap } = require("../constants/toolsMap")
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 exports.createThread = async (req, res) => {
@@ -35,9 +34,6 @@ exports.addMessageToThread = async (req, res) => {
       content: message
     })
 
-    // Définir les outils
-    const tools = Array.from(toolsMap.values())
-
     let run = await openai.beta.threads.runs.list(threadId)
     run = run.data.find((r) => ["in_progress", "queued"].includes(r.status))
 
@@ -45,7 +41,6 @@ exports.addMessageToThread = async (req, res) => {
       // Démarrer un run
       run = await openai.beta.threads.runs.create(threadId, {
         assistant_id: process.env.OPENAI_ASSISTANT_ID,
-        tools,
         max_prompt_tokens: 1000
       })
     }
@@ -96,11 +91,14 @@ exports.addMessageToThread = async (req, res) => {
     )
 
     const latestMessage = assistantMessages[0]?.content[0]?.text?.value
-    res
-      .status(200)
-      .json({ response: latestMessage || "No response from assistant." })
+    if (!latestMessage) {
+      throw new Error("No response from assistant")
+    }
+    res.status(200).json({ response: latestMessage })
+    return
   } catch (error) {
     console.error("Error adding message to thread:", error)
     res.status(500).json({ error: "Failed to process message" })
+    return
   }
 }
