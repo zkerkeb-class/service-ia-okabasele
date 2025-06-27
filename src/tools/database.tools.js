@@ -1,5 +1,4 @@
-import { fetchJson } from "../utils"
-
+const { fetchJson } = require("../utils")
 // Tool: Get session by ID
 const getSessionByIdTool = async (sessionId) => {
   return fetchJson(`${process.env.DATABASE_SERVICE_URL}/sessions/${sessionId}`)

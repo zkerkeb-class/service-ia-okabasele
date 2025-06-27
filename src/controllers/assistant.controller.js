@@ -1,11 +1,15 @@
 const { OpenAI } = require("openai")
 const toolService = require("../services/tool.service")
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
-exports.createThread = async (req, res) => {
+const sessionService = require("../services/session.service")
+exports.createThreadForSession = async (req, res) => {
   try {
+    const { sessionId } = req.body
     const thread = await openai.beta.threads.create()
-    res.status(201).json({ threadId: thread.id })
+    await sessionService.addThreadIdToSession(sessionId, thread.id)
+    res
+      .status(201)
+      .json({ threadId: thread.id, message: "Thread created successfully" })
   } catch (error) {
     console.error("Error creating thread:", error)
     res.status(500).json({ error: "Failed to create thread" })
