@@ -1,5 +1,5 @@
 const { OpenAI } = require("openai")
-const toolService = require("../services/tool.service")
+const databaseTools = require("../tools/database.tools")
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 const sessionService = require("../services/session.service")
 exports.createThreadForSession = async (req, res) => {
@@ -29,13 +29,23 @@ exports.getThreadById = async (req, res) => {
 
 exports.addMessageToThread = async (req, res) => {
   const { threadId } = req.params
-  const { message, userId } = req.body
+  const { message, userId, sessionId } = req.body
 
   try {
+    // Vérifier si un run est déjà actif
+    let runs = await openai.beta.threads.runs.list(threadId)
+    const activeRun = runs.data.find((r) =>
+      ["in_progress", "queued", "requires_action"].includes(r.status)
+    )
+    if (activeRun) {
+      // cancel the run
+      openai.beta.threads.runs.cancel(threadId, activeRun.id)
+    }
     // Ajouter le message utilisateur
     await openai.beta.threads.messages.create(threadId, {
       role: "user",
-      content: message
+      content: message,
+      metadata: { userId, sessionId }
     })
 
     let run = await openai.beta.threads.runs.list(threadId)
@@ -45,7 +55,7 @@ exports.addMessageToThread = async (req, res) => {
       // Démarrer un run
       run = await openai.beta.threads.runs.create(threadId, {
         assistant_id: process.env.OPENAI_ASSISTANT_ID,
-        max_prompt_tokens: 1000
+        max_prompt_tokens: 10000
       })
     }
 
@@ -59,7 +69,6 @@ exports.addMessageToThread = async (req, res) => {
         const toolOutputs = []
 
         // Import database tools
-        const databaseTools = require("../tools/database.tools")
 
         for (const toolCall of toolCalls) {
           const functionName = toolCall.function.name
@@ -67,12 +76,8 @@ exports.addMessageToThread = async (req, res) => {
 
           let result
           if (databaseTools[functionName]) {
-            // Pass all args, not just userId
-            result = await databaseTools[functionName](
-              ...(Array.isArray(args) ? args : Object.values(args))
-            )
-          } else if (toolService[functionName]) {
-            result = await toolService[functionName](args.userId || userId)
+            // Always call with named arguments (object destructuring)
+            result = await databaseTools[functionName](args)
           } else {
             result = { error: `Tool ${functionName} not found in toolHandlers` }
           }
@@ -102,6 +107,7 @@ exports.addMessageToThread = async (req, res) => {
       (m) => m.role === "assistant"
     )
 
+    console.log({ messages, assistantMessages })
     const latestMessage = assistantMessages[0]?.content[0]?.text?.value
     if (!latestMessage) {
       throw new Error("No response from assistant")
