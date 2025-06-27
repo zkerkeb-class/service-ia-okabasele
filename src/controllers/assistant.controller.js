@@ -54,12 +54,20 @@ exports.addMessageToThread = async (req, res) => {
         const toolCalls = run.required_action.submit_tool_outputs.tool_calls
         const toolOutputs = []
 
+        // Import database tools
+        const databaseTools = require("../tools/database.tools")
+
         for (const toolCall of toolCalls) {
           const functionName = toolCall.function.name
           const args = JSON.parse(toolCall.function.arguments)
 
           let result
-          if (toolService[functionName]) {
+          if (databaseTools[functionName]) {
+            // Pass all args, not just userId
+            result = await databaseTools[functionName](
+              ...(Array.isArray(args) ? args : Object.values(args))
+            )
+          } else if (toolService[functionName]) {
             result = await toolService[functionName](args.userId || userId)
           } else {
             result = { error: `Tool ${functionName} not found in toolHandlers` }

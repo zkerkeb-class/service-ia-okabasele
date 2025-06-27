@@ -1,8 +1,7 @@
 require("dotenv").config()
 const express = require("express")
 const cors = require("cors")
-const assistantRoutes = require("./routes/assistant.routes")
-
+const apiRoutes = require("./routes")
 const app = express()
 const PORT = process.env.PORT || 3001
 
@@ -16,6 +15,6 @@ app.use(
 )
 
 // Routes
-app.use("/api", assistantRoutes)
+app.use("/api", apiRoutes)
 // Lancer le serveur
-app.listen(PORT, () => console.log("🎵 Server running on port 3001"))
+app.listen(PORT, () => console.log(`🎵 Server running on port ${PORT}`))
