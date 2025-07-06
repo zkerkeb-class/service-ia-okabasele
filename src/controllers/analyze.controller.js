@@ -19,14 +19,12 @@ exports.analyzePerformance = async (req, res) => {
     }
 
     // 2. Update feedback in the performance just analyzed
-    if (performance._id) {
-      await databaseTools.updatePerformanceFeedbackTool(
-        performance._id,
-        feedback
-      )
-    }
+    await databaseTools.updatePerformanceFeedbackTool({
+      performanceId: performance._id,
+      feedback
+    })
     res.json({ score, feedback: analysis })
   } catch (error) {
-    res.status(500).json({ error })
+    res.status(500).json({ error: `Feedback of performance was not updated!` })
   }
 }
