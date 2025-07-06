@@ -112,7 +112,16 @@ exports.addMessageToThread = async (req, res) => {
     if (!latestMessage) {
       throw new Error("No response from assistant")
     }
-    res.status(200).json({ response: latestMessage })
+    let parsedMessage
+    try {
+      // Nettoyer la chaîne (enlever les espaces/retours à la ligne au début/fin)
+      const cleaned = latestMessage.trim()
+      parsedMessage = JSON.parse(cleaned)
+    } catch (e) {
+      // Si ce n'est pas du JSON, on garde le texte brut
+      parsedMessage = latestMessage
+    }
+    res.status(200).json({ response: parsedMessage })
     return
   } catch (error) {
     console.error("Error adding message to thread:", error)
