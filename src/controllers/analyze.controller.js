@@ -18,19 +18,15 @@ exports.analyzePerformance = async (req, res) => {
         .join(", ")
     }
 
-    // 2. Get latest performance for this user/session/section
-    const latest =
-      await databaseTools.getLatestPerformanceByUserSessionAndSectionTool(
-        performance.user,
-        performance.session,
-        performance.section
+    // 2. Update feedback in the performance just analyzed
+    if (performance._id) {
+      await databaseTools.updatePerformanceFeedbackTool(
+        performance._id,
+        feedback
       )
-    if (latest && latest._id) {
-      // 3. Update feedback in database
-      await databaseTools.updatePerformanceFeedbackTool(latest._id, feedback)
     }
     res.json({ score, feedback: analysis })
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    res.status(500).json({ error })
   }
 }
