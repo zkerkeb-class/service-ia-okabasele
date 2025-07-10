@@ -4,7 +4,11 @@ const cors = require("cors")
 const apiRoutes = require("./routes")
 const app = express()
 const PORT = process.env.PORT || 3001
-
+const {
+  initializeMetrics,
+  metricsMiddleware,
+  metricsRouter
+} = require("./utils/metrics")
 app.use(express.json())
 app.use(
   cors({
@@ -13,7 +17,14 @@ app.use(
     credentials: true
   })
 )
+// 🔧 INITIALISATION DES MÉTRIQUES
+initializeMetrics("ai")
 
+// 📊 MIDDLEWARE MÉTRIQUES
+app.use(metricsMiddleware)
+
+// 🛣️ ROUTES MÉTRIQUES
+app.use(metricsRouter)
 // Routes
 app.use("/api", apiRoutes)
 // Lancer le serveur
